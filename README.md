@@ -1,10 +1,10 @@
-# QueueGo
+QueueGo
 
 Sistema de coordinación y gestión de domicilios por roles.
 
 QueueGo busca digitalizar la coordinación de restaurantes, clientes, repartidores y central de operaciones, reduciendo la dependencia de comunicación manual y proporcionando trazabilidad sobre pedidos y entregas.
 
-## Tecnologías
+Tecnologías
 
 - Flutter / Dart
 - Supabase Auth
@@ -15,14 +15,14 @@ QueueGo busca digitalizar la coordinación de restaurantes, clientes, repartidor
 - Geolocator
 - Flutter Web
 
-## Roles
+Roles
 
 - Cliente
 - Restaurante
 - Repartidor
 - Central
 
-## Funcionalidades actuales
+Funcionalidades actuales
 
 - Inicio de sesión con Supabase Auth.
 - Creación automática del perfil mediante trigger.
@@ -31,7 +31,7 @@ QueueGo busca digitalizar la coordinación de restaurantes, clientes, repartidor
 - Consulta de restaurantes desde Supabase.
 - Diseño responsive inicial.
 
-## Funcionalidades en desarrollo
+Funcionalidades en desarrollo
 
 - Catálogo de productos.
 - Carrito.
@@ -44,7 +44,7 @@ QueueGo busca digitalizar la coordinación de restaurantes, clientes, repartidor
 - Reportes e indicadores.
 - Tema visual definitivo.
 
-## Arquitectura
+ Arquitectura
 
 ```text
 screens
@@ -58,7 +58,7 @@ Supabase
 
 Los modelos se mantienen separados de la lógica de acceso a datos.
 
-## Configuración
+Configuración
 
 Crear un archivo `.env` en la raíz:
 
@@ -71,7 +71,7 @@ No publicar el `.env` real en GitHub.
 
 El repositorio debe incluir un `.env.example` sin valores sensibles.
 
-## Ejecución
+Ejecución
 
 ```bash
 flutter pub get
@@ -84,7 +84,7 @@ Para validar el proyecto:
 flutter analyze
 ```
 
-## Supabase
+Supabase
 
 El proyecto utiliza las tablas:
 
@@ -99,7 +99,7 @@ deliveries
 
 RLS debe mantenerse habilitado y las políticas deben limitar el acceso según el rol y/o usuario correspondiente.
 
-## SOLID aplicado
+SOLID aplicado
 
 - **SRP:** separación entre modelos, repositorios, servicios, pantallas y dashboards.
 - **OCP:** roles y módulos separados para facilitar extensión.
@@ -107,7 +107,7 @@ RLS debe mantenerse habilitado y las políticas deben limitar el acceso según e
 - **ISP:** interfaces pequeñas y específicas.
 - **LSP:** no se fuerza una jerarquía de herencia donde no existe una necesidad real.
 
-## Segunda entrega
+Segunda entrega
 
 La segunda entrega realiza una revisión crítica de la implementación inicial y registra los cambios en `docs/control_cambios.md`.
 
@@ -120,7 +120,7 @@ Cambios principales:
 5. Abstracción del acceso a datos mediante repositorios.
 6. Implementación concreta de servicios Supabase.
 
-## Documentación
+Documentación
 
 ```text
 docs/
@@ -132,7 +132,7 @@ docs/
 └── uml_casos_uso.puml
 ```
 
-## Declaración de uso de IA
+Declaración de uso de IA
 
 Durante el desarrollo se utilizamos inteligencia artificial como apoyo técnico para analizar código, identificar oportunidades de refactorización, proponer estructuras, resolver errores y apoyar la documentación.
 
