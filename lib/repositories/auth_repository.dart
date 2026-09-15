@@ -1,17 +1,18 @@
 import '../models/user_role.dart';
 
-/// DIP - Dependency Inversion Principle
+/// Contrato para las operaciones de autenticación.
 ///
-/// La aplicación no dependerá directamente de Supabase para
-/// realizar autenticación.
-///
-/// En su lugar, las pantallas y servicios dependerán de esta
-/// abstracción. Esto permite cambiar la implementación de
-/// autenticación sin modificar la interfaz de usuario.
+/// DIP:
+/// Las pantallas dependen de esta abstracción
+/// y no directamente de Supabase.
 abstract class AuthRepository {
-  Future<UserRole?> login({
+  Future<UserRole?> login({required String email, required String password});
+
+  Future<UserRole?> register({
+    required String fullName,
     required String email,
     required String password,
+    required UserRole role,
   });
 
   Future<void> logout();

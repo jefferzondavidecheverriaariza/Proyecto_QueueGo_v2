@@ -3,11 +3,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_role.dart';
 import '../repositories/auth_repository.dart';
 
-/// Implementación concreta de autenticación utilizando Supabase.
+/// Implementación de autenticación utilizando Supabase.
 ///
-/// La clase implementa AuthRepository, por lo que la aplicación
-/// puede trabajar con la abstracción sin depender directamente
-/// de esta implementación.
+/// SRP:
+/// Esta clase se encarga exclusivamente de comunicarse
+/// con Supabase Auth y obtener el rol del usuario.
+///
+/// DIP:
+/// Implementa AuthRepository, por lo que la interfaz de usuario
+/// no depende directamente de Supabase.
 class SupabaseAuthService implements AuthRepository {
   final SupabaseClient _client;
 
@@ -26,7 +30,7 @@ class SupabaseAuthService implements AuthRepository {
     required String password,
   }) async {
     final response = await _client.auth.signInWithPassword(
-      email: email,
+      email: email.trim(),
       password: password,
     );
 
@@ -43,7 +47,47 @@ class SupabaseAuthService implements AuthRepository {
     return role;
   }
 
-  Future<UserRole?> _getUserRole(String userId) async {
+  @override
+  Future<UserRole?> register({
+    required String fullName,
+    required String email,
+    required String password,
+    required UserRole role,
+  }) async {
+    // Por seguridad, solamente Cliente y Restaurante
+    // pueden registrarse desde la aplicación.
+    if (role != UserRole.client &&
+        role != UserRole.restaurant) {
+      throw Exception(
+        'Este rol no puede registrarse desde la aplicación.',
+      );
+    }
+
+    final roleValue = role == UserRole.client
+        ? 'client'
+        : 'restaurant';
+
+    final response = await _client.auth.signUp(
+      email: email.trim(),
+      password: password,
+      data: {
+        'full_name': fullName.trim(),
+        'role': roleValue,
+      },
+    );
+
+    final user = response.user;
+
+    if (user == null) {
+      return null;
+    }
+
+    return role;
+  }
+
+  Future<UserRole?> _getUserRole(
+    String userId,
+  ) async {
     final response = await _client
         .from('profiles')
         .select('role')
@@ -54,19 +98,27 @@ class SupabaseAuthService implements AuthRepository {
       return null;
     }
 
-    return _roleFromString(response['role'] as String);
+    return _roleFromString(
+      response['role'] as String,
+    );
   }
 
-  UserRole? _roleFromString(String value) {
+  UserRole? _roleFromString(
+    String value,
+  ) {
     switch (value) {
       case 'client':
         return UserRole.client;
+
       case 'restaurant':
         return UserRole.restaurant;
+
       case 'courier':
         return UserRole.courier;
+
       case 'central':
         return UserRole.central;
+
       default:
         return null;
     }
@@ -75,6 +127,7 @@ class SupabaseAuthService implements AuthRepository {
   @override
   Future<void> logout() async {
     await _client.auth.signOut();
+
     _currentRole = null;
   }
 }

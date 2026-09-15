@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
+
 import '../../models/user_role.dart';
 import '../../repositories/auth_repository.dart';
 import '../../services/supabase_auth_service.dart';
+
 import '../client/client_dashboard.dart';
 import '../restaurant/restaurant_dashboard.dart';
 import '../courier/courier_dashboard.dart';
 import '../central/central_dashboard.dart';
+import 'register_screen.dart';
 
+/// Pantalla principal de autenticación.
+///
+/// SRP:
+/// Esta pantalla se encarga de la interacción de inicio
+/// de sesión y navegación según el rol.
+///
+/// DIP:
+/// La pantalla depende de AuthRepository y no directamente
+/// de Supabase.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -15,36 +27,33 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   // DIP:
-  // La pantalla trabaja con la abstracción AuthRepository
-  // y no directamente con Supabase.
+  // Dependemos de la abstracción AuthRepository.
   final AuthRepository _authRepository = SupabaseAuthService();
 
   bool _isLoading = false;
-  String? _errorMessage;
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+
     super.dispose();
   }
 
   Future<void> _login() async {
-    if (_emailController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty) {
-      setState(() {
-        _errorMessage = 'Ingresa tu correo y contraseña.';
-      });
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -56,19 +65,15 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (role == null) {
-        setState(() {
-          _errorMessage = 'No se pudo obtener el rol del usuario.';
-        });
+        _showError('No se encontró un rol válido para este usuario.');
         return;
       }
 
-      _goToDashboard(role);
-    } catch (e) {
+      _openDashboard(role);
+    } catch (error) {
       if (!mounted) return;
 
-      setState(() {
-        _errorMessage = 'Error: $e';
-      });
+      _showError(_getErrorMessage(error));
     } finally {
       if (mounted) {
         setState(() {
@@ -78,8 +83,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _goToDashboard(UserRole role) {
-    final Widget dashboard;
+  void _openDashboard(UserRole role) {
+    Widget dashboard;
 
     switch (role) {
       case UserRole.client:
@@ -99,10 +104,45 @@ class _LoginScreenState extends State<LoginScreen> {
         break;
     }
 
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => dashboard),
+      (route) => false,
+    );
+  }
+
+  void _openRegister() {
     Navigator.of(
       context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => dashboard));
-  }     
+    ).push(MaterialPageRoute(builder: (_) => const RegisterScreen()));
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _getErrorMessage(Object error) {
+    final message = error.toString();
+
+    if (message.contains('invalid_credentials')) {
+      return 'Correo o contraseña incorrectos.';
+    }
+
+    if (message.contains('Invalid login credentials')) {
+      return 'Correo o contraseña incorrectos.';
+    }
+
+    if (message.contains('Email not confirmed')) {
+      return 'Debes confirmar tu correo electrónico.';
+    }
+
+    if (message.contains('network')) {
+      return 'No hay conexión con el servidor.';
+    }
+
+    return 'No se pudo iniciar sesión.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -113,69 +153,120 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'QueueGo',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
-                  ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 40),
 
-                  const SizedBox(height: 12),
-
-                  const Text(
-                    'Inicia sesión para continuar',
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Correo electrónico',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Contraseña',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  if (_errorMessage != null)
                     Text(
-                      _errorMessage!,
+                      'QueueGo',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red),
+                      style: Theme.of(context).textTheme.headlineLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 8),
 
-                  SizedBox(
-                    height: 50,
-                    child: FilledButton(
-                      onPressed: _isLoading ? null : _login,
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(),
-                            )
-                          : const Text('Iniciar sesión'),
+                    Text(
+                      'Inicia sesión para continuar',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 40),
+
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      enabled: !_isLoading,
+                      decoration: const InputDecoration(
+                        labelText: 'Correo electrónico',
+                        hintText: 'ejemplo@correo.com',
+                        prefixIcon: Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Ingresa tu correo.';
+                        }
+
+                        if (!value.contains('@')) {
+                          return 'Ingresa un correo válido.';
+                        }
+
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      enabled: !_isLoading,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) {
+                        if (!_isLoading) {
+                          _login();
+                        }
+                      },
+                      decoration: InputDecoration(
+                        labelText: 'Contraseña',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Ingresa tu contraseña.';
+                        }
+
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      height: 52,
+                      child: FilledButton(
+                        onPressed: _isLoading ? null : _login,
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Iniciar sesión'),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextButton(
+                      onPressed: _isLoading ? null : _openRegister,
+                      child: const Text('¿No tienes una cuenta? Registrarse'),
+                    ),
+
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),
